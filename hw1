@@ -1,0 +1,54 @@
+docker run -it --entrypoint bash python:3.12.8
+pip --version
+
+Hostname: db
+Port: 5432
+
+SELECT count(*) FROM public.green_tripdata
+where trip_distance>1 and trip_distance<=3 and lpep_pickup_datetime >= '2019-10-01 00:00:00'
+  AND lpep_dropoff_datetime < '2019-11-01 00:00:00' ;
+
+
+SELECT count(*) FROM public.green_tripdata
+where trip_distance<=1  and lpep_pickup_datetime >= '2019-10-01 00:00:00'
+  AND lpep_dropoff_datetime < '2019-11-01 00:00:00' ;
+
+select * from(
+select max(trip_distance) as max_trip,lpep_pickup_datetime from public.green_tripdata
+group by lpep_pickup_datetime) order by max_trip desc;
+
+SELECT 
+    l."Zone" AS pickup_zone,
+    l."Borough" AS pickup_borough,
+    SUM(t.total_amount) AS total_revenue
+FROM 
+    public.green_tripdata t
+JOIN 
+    public.taxi_zone_lookup l ON t.PULocationID = l."LocationID"
+WHERE 
+    DATE(t.lpep_pickup_datetime) = '2019-10-18'
+GROUP BY 
+    l."Zone", l."Borough"
+HAVING 
+    SUM(t.total_amount) > 13000
+ORDER BY 
+    total_revenue DESC;
+
+
+SELECT 
+    d."Zone" AS dropoff_zone, 
+    MAX(t.tip_amount) AS max_tip
+FROM 
+    public.green_tripdata t
+JOIN 
+    public.taxi_zone_lookup p ON t.pulocationid = p."LocationID"
+JOIN 
+    public.taxi_zone_lookup d ON t.dolocationid = d."LocationID"
+WHERE 
+    p."Zone" = 'East Harlem North'
+    AND DATE_TRUNC('month', t.lpep_pickup_datetime) = '2019-10-01'
+GROUP BY 
+    d."Zone"
+ORDER BY 
+    max_tip DESC
+LIMIT 1;
